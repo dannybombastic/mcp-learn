@@ -1,89 +1,89 @@
 # MCP Learn Catalog Server 📚
 
-Un servidor MCP (Model Context Protocol) para extraer y procesar contenido de Microsoft Learn. Permite acceder a catálogos de certificaciones, módulos de aprendizaje y extraer contenido completo de las unidades de estudio.
+An MCP (Model Context Protocol) server for extracting and processing Microsoft Learn content. Provides access to certification catalogs, learning modules, and complete content extraction from study units.
 
-## 🚀 Características
+## 🚀 Features
 
-- **Búsqueda de catálogo**: Busca módulos, certificaciones, learning paths y más en Microsoft Learn
-- **Extracción de contenido**: Extrae contenido completo de módulos incluyendo tablas, diagramas y texto técnico
-- **Scraping inteligente**: Construye URLs automáticamente y extrae contenido estructurado
-- **Soporte para certificaciones**: Optimizado para certificaciones como AZ-104, AZ-900, etc.
-- **API de Microsoft Learn**: Integración directa con la API oficial de Microsoft Learn
+- **Catalog Search**: Search modules, certifications, learning paths and more on Microsoft Learn
+- **Content Extraction**: Extract complete module content including tables, diagrams and technical text
+- **Smart Scraping**: Automatically builds URLs and extracts structured content
+- **Certification Support**: Optimized for certifications like AZ-104, AZ-900, etc.
+- **Microsoft Learn API**: Direct integration with official Microsoft Learn API
 
-## 🛠️ Herramientas Disponibles
+## 🛠️ Available Tools
 
 ### 1. `listCatalog`
-Lista objetos de Microsoft Learn por tipo.
+Lists Microsoft Learn objects by type.
 
-**Parámetros:**
-- `type`: Tipo de contenido (modules, certifications, learningPaths, etc.)
-- `locale`: Idioma (por defecto: en-us)
-- `max_results`: Máximo número de resultados
+**Parameters:**
+- `type`: Content type (modules, certifications, learningPaths, etc.)
+- `locale`: Language (default: en-us)
+- `max_results`: Maximum number of results
 
 ### 2. `searchCatalog`
-Busca en el catálogo de Microsoft Learn con filtros avanzados.
+Search Microsoft Learn catalog with advanced filters.
 
-**Parámetros:**
-- `q`: Texto de búsqueda libre
-- `type`: Tipos de contenido separados por comas
-- `level`: Niveles (beginner, intermediate, advanced)
-- `product`: Productos específicos
-- `role`: Roles específicos
+**Parameters:**
+- `q`: Free text search
+- `type`: Content types separated by commas
+- `level`: Levels (beginner, intermediate, advanced)
+- `product`: Specific products
+- `role`: Specific roles
 
 ### 3. `getDetail`
-Obtiene detalles completos de objetos por UID.
+Get complete object details by UID.
 
-**Parámetros:**
-- `uid`: UIDs separados por comas
-- `locale`: Idioma
-- `type`: Filtro opcional por tipo
+**Parameters:**
+- `uid`: UIDs separated by commas
+- `locale`: Language
+- `type`: Optional type filter
 
 ### 4. `scrapeModuleUnits` ⭐
-**Herramienta principal**: Extrae contenido completo de módulos de Microsoft Learn.
+**Main tool**: Extract complete content from Microsoft Learn modules.
 
-**Parámetros:**
-- `module`: Objeto de módulo con UID, firstUnitUrl y units
-- `firstUnitUrl`: URL de la primera unidad (alternativa)
-- `units`: Array de UIDs de unidades (alternativa)
-- `max_chars_excerpt`: Máximo de caracteres por unidad (por defecto: 20,000)
-- `max_units`: Máximo número de unidades
-- `with_text_excerpt`: Incluir extracto de texto completo
+**Parameters:**
+- `module`: Module object with UID, firstUnitUrl and units
+- `firstUnitUrl`: First unit URL (alternative)
+- `units`: Array of unit UIDs (alternative)
+- `max_chars_excerpt`: Maximum characters per unit (default: 20,000)
+- `max_units`: Maximum number of units
+- `with_text_excerpt`: Include complete text excerpt
 
-## 📋 Prerequisitos
+## 📋 Prerequisites
 
 - Node.js >= 18.17
-- npm o yarn
+- npm or yarn
 
-## 🔧 Instalación
+## 🔧 Installation
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 ```bash
 git clone <repository-url>
 cd mcp-learn-catalog
 ```
 
-### 2. Instalar dependencias
+### 2. Install dependencies
 ```bash
 npm install
 ```
 
-### 3. Compilar el proyecto
+### 3. Build the project
 ```bash
 npm run build
 ```
 
-### 4. Configurar en Visual Studio Code
+### 4. Configure in Visual Studio Code
 
-#### Configuración MCP en VS Code
+#### MCP Configuration in VS Code
 
-1. **Instalar extensión de Claude/MCP** (si no está instalada)
+1. **Install Claude/MCP extension** (if not installed)
 
-2. **Configurar el servidor MCP** en VS Code:
-   - Abrir VS Code
-   - Presionar `Ctrl+Shift+P` (o `Cmd+Shift+P` en Mac)
-   - Buscar "MCP: Add Server" o editar configuración MCP
+2. **Configure MCP server** in VS Code:
+   - Open VS Code
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
+   - Search for "MCP: Add Server" or edit MCP configuration
 
-3. **Añadir configuración en `mcp.json`**:
+3. **Add configuration in `mcp.json`**:
 ```json
 {
   "servers": {
@@ -101,54 +101,54 @@ npm run build
 }
 ```
 
-4. **Ubicación del archivo de configuración**:
+4. **Configuration file location**:
    - **Windows**: `%APPDATA%\Code\User\mcp.json`
    - **macOS**: `~/Library/Application Support/Code/User/mcp.json`
    - **Linux**: `~/.config/Code/User/mcp.json`
 
-#### Configuración alternativa (settings.json)
-También puedes configurarlo en VS Code `settings.json`:
+#### Alternative configuration (settings.json)
+You can also configure it in VS Code `settings.json`:
 ```json
 {
   "mcp.servers": {
     "mcp-learn-catalog": {
       "command": "node",
-      "args": ["/ruta/absoluta/a/mcp-learn-catalog/dist/server.js"]
+      "args": ["/absolute/path/to/mcp-learn-catalog/dist/server.js"]
     }
   }
 }
 ```
 
-### 5. Ejecutar el servidor (modo standalone)
+### 5. Run the server (standalone mode)
 ```bash
 npm start
 ```
 
-## 🚀 Uso con Visual Studio Code
+## 🚀 Usage with Visual Studio Code
 
-### Verificar que el servidor funciona
+### Verify the server works
 
-1. **Reiniciar VS Code** después de añadir la configuración MCP
-2. **Abrir la paleta de comandos** (`Ctrl+Shift+P`)
-3. **Buscar "MCP"** para ver comandos disponibles
-4. **Verificar conexión** - deberías ver el servidor `learn-catalog` listado
+1. **Restart VS Code** after adding MCP configuration
+2. **Open command palette** (`Ctrl+Shift+P`)
+3. **Search "MCP"** to see available commands
+4. **Verify connection** - you should see the `learn-catalog` server listed
 
-### Comandos disponibles en VS Code
+### Available commands in VS Code
 
-Una vez configurado, puedes usar las herramientas desde Claude o cualquier cliente MCP:
+Once configured, you can use the tools from Claude or any MCP client:
 
-#### 🔍 Buscar certificaciones
+#### 🔍 Search certifications
 ```javascript
-// Buscar certificación AZ-104
+// Search for AZ-104 certification
 searchCatalog({
   q: "AZ-104 Azure Administrator",
   type: "certifications,learningPaths"
 })
 ```
 
-#### 📚 Extraer contenido de módulos
+#### 📚 Extract module content
 ```javascript
-// Extraer contenido completo de un módulo
+// Extract complete content from a module
 scrapeModuleUnits({
   firstUnitUrl: "https://learn.microsoft.com/training/modules/configure-storage-accounts/1-introduction/",
   max_chars_excerpt: 25000,
@@ -156,9 +156,9 @@ scrapeModuleUnits({
 })
 ```
 
-#### 📋 Listar módulos por tipo
+#### 📋 List modules by type
 ```javascript
-// Listar todos los módulos disponibles
+// List all available modules
 listCatalog({
   type: "modules",
   max_results: 50
@@ -167,50 +167,50 @@ listCatalog({
 
 ### Troubleshooting VS Code
 
-#### Problema: Servidor no aparece
-- ✅ Verificar que el path en `mcp.json` es absoluto y correcto
-- ✅ Asegurar que `npm run build` se ejecutó exitosamente
-- ✅ Reiniciar VS Code completamente
-- ✅ Verificar logs en la consola de desarrollador de VS Code
+#### Issue: Server doesn't appear
+- ✅ Verify the path in `mcp.json` is absolute and correct
+- ✅ Ensure `npm run build` executed successfully
+- ✅ Restart VS Code completely
+- ✅ Check logs in VS Code developer console
 
-#### Problema: Errores de conexión
-- ✅ Verificar que Node.js ≥18.17 está instalado
-- ✅ Comprobar que todas las dependencias están instaladas (`npm install`)
-- ✅ Revisar permisos de archivos en Linux/macOS
+#### Issue: Connection errors
+- ✅ Verify Node.js ≥18.17 is installed
+- ✅ Check all dependencies are installed (`npm install`)
+- ✅ Review file permissions on Linux/macOS
 
-#### Problema: Herramientas no disponibles
-- ✅ Verificar que la extensión MCP está habilitada
-- ✅ Comprobar que el servidor está corriendo sin errores
-- ✅ Verificar configuración JSON válida en `mcp.json`
+#### Issue: Tools not available
+- ✅ Verify MCP extension is enabled
+- ✅ Check server is running without errors
+- ✅ Verify valid JSON configuration in `mcp.json`
 
-## 🚀 Desarrollo
+## 🚀 Development
 
-### Ejecutar en modo desarrollo
+### Run in development mode
 ```bash
 npm run dev
 ```
 
-### Verificar tipos TypeScript
+### Check TypeScript types
 ```bash
 npm run check
 ```
 
-### Estructura del proyecto
+### Project structure
 ```
 mcp-learn-catalog/
 ├── src/
-│   ├── server.ts          # Servidor MCP principal
+│   ├── server.ts          # Main MCP server
 │   └── types/
-│       └── html-to-text.d.ts  # Definiciones de tipos
-├── dist/                  # Archivos compilados
+│       └── html-to-text.d.ts  # Type definitions
+├── dist/                  # Compiled files
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
 
-## 📝 Ejemplo de Configuración Completa
+## 📝 Complete Configuration Example
 
-### Archivo `mcp.json` ejemplo completo:
+### Complete `mcp.json` file example:
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp.json",
@@ -218,27 +218,27 @@ mcp-learn-catalog/
     "mcp-learn-catalog": {
       "command": "node",
       "args": [
-        "/home/usuario/Documents/mcp-learn/dist/server.js"
+        "/home/user/Documents/mcp-learn/dist/server.js"
       ],
       "env": {},
-      "description": "Microsoft Learn Catalog Server - Extrae contenido de certificaciones y módulos"
+      "description": "Microsoft Learn Catalog Server - Extract certification and module content"
     }
   }
 }
 ```
 
-### Script de configuración automática (Linux/macOS):
+### Automatic setup script (Linux/macOS):
 ```bash
 #!/bin/bash
 # setup-vscode-mcp.sh
 
-# Obtener la ruta actual del proyecto
+# Get current project path
 PROJECT_PATH=$(pwd)
 
-# Crear directorio de configuración si no existe
+# Create configuration directory if it doesn't exist
 mkdir -p ~/.config/Code/User
 
-# Crear archivo mcp.json
+# Create mcp.json file
 cat > ~/.config/Code/User/mcp.json << EOF
 {
   "\$schema": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp.json",
@@ -253,21 +253,21 @@ cat > ~/.config/Code/User/mcp.json << EOF
 }
 EOF
 
-echo "✅ Configuración MCP creada en ~/.config/Code/User/mcp.json"
-echo "🔄 Reinicia VS Code para aplicar los cambios"
+echo "✅ MCP configuration created at ~/.config/Code/User/mcp.json"
+echo "🔄 Restart VS Code to apply changes"
 ```
 
-### Script de configuración para Windows (PowerShell):
+### Windows setup script (PowerShell):
 ```powershell
 # setup-vscode-mcp.ps1
 
 $projectPath = Get-Location
 $configPath = "$env:APPDATA\Code\User"
 
-# Crear directorio si no existe
+# Create directory if it doesn't exist
 New-Item -ItemType Directory -Force -Path $configPath
 
-# Crear contenido JSON
+# Create JSON content
 $mcpConfig = @{
     '$schema' = 'https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp.json'
     servers = @{
@@ -280,24 +280,24 @@ $mcpConfig = @{
     }
 }
 
-# Convertir a JSON y guardar
+# Convert to JSON and save
 $mcpConfig | ConvertTo-Json -Depth 3 | Out-File -FilePath "$configPath\mcp.json" -Encoding UTF8
 
-Write-Host "✅ Configuración MCP creada en $configPath\mcp.json"
-Write-Host "🔄 Reinicia VS Code para aplicar los cambios"
+Write-Host "✅ MCP configuration created at $configPath\mcp.json"
+Write-Host "🔄 Restart VS Code to apply changes"
 ```
 
-## 🎯 Casos de Uso
+## 🎯 Use Cases
 
-### Extraer contenido de certificación AZ-104
+### Extract AZ-104 certification content
 ```javascript
-// Buscar certificación AZ-104
+// Search for AZ-104 certification
 searchCatalog({
   q: "AZ-104",
   type: "certifications,learningPaths,modules"
 })
 
-// Extraer contenido de un módulo específico
+// Extract content from a specific module
 scrapeModuleUnits({
   firstUnitUrl: "https://learn.microsoft.com/en-us/training/modules/configure-storage-accounts/1-introduction/",
   units: ["learn.wwl.configure-storage-accounts.introduction", "learn.wwl.configure-storage-accounts.implement-azure-storage"],
@@ -306,7 +306,7 @@ scrapeModuleUnits({
 })
 ```
 
-### Buscar módulos por tecnología
+### Search modules by technology
 ```javascript
 searchCatalog({
   q: "Azure Storage",
@@ -316,75 +316,75 @@ searchCatalog({
 })
 ```
 
-## 🔍 Funcionalidades Avanzadas
+## 🔍 Advanced Features
 
-### Extracción de Tablas
-La herramienta `scrapeModuleUnits` extrae automáticamente:
-- ✅ Tablas de comparación
-- ✅ Especificaciones técnicas
-- ✅ Listas de características
-- ✅ Diagramas y notas
-- ✅ Enlaces y referencias
+### Table Extraction
+The `scrapeModuleUnits` tool automatically extracts:
+- ✅ Comparison tables
+- ✅ Technical specifications
+- ✅ Feature lists
+- ✅ Diagrams and notes
+- ✅ Links and references
 
-### Construcción Inteligente de URLs
-El servidor construye automáticamente URLs válidas para unidades de Microsoft Learn:
-- Detecta patrones de URL base
-- Numera secuencialmente las unidades
-- Maneja diferentes formatos de slug
+### Smart URL Construction
+The server automatically builds valid URLs for Microsoft Learn units:
+- Detects URL base patterns
+- Numbers units sequentially
+- Handles different slug formats
 
-### Límites de Contenido Configurable
-- Extracción hasta 25,000 caracteres por unidad
-- Procesamiento de múltiples unidades en paralelo
-- Control de concurrencia para evitar rate limiting
+### Configurable Content Limits
+- Extract up to 25,000 characters per unit
+- Process multiple units in parallel
+- Concurrency control to avoid rate limiting
 
-## 🛡️ Dependencias
+## 🛡️ Dependencies
 
-### Producción
-- **@modelcontextprotocol/sdk**: Framework MCP
-- **cheerio**: Parser HTML para scraping
-- **html-to-text**: Conversión HTML a texto
-- **p-limit**: Control de concurrencia
-- **zod**: Validación de esquemas
+### Production
+- **@modelcontextprotocol/sdk**: MCP framework
+- **cheerio**: HTML parser for scraping
+- **html-to-text**: HTML to text conversion
+- **p-limit**: Concurrency control
+- **zod**: Schema validation
 
-### Desarrollo
-- **tsx**: Ejecutor TypeScript
-- **typescript**: Compilador TypeScript
+### Development
+- **tsx**: TypeScript runner
+- **typescript**: TypeScript compiler
 
-## 📊 API de Microsoft Learn
+## 📊 Microsoft Learn API
 
-Este servidor se integra con:
-- **Microsoft Learn Catalog API**: Para búsqueda y metadatos
-- **Microsoft Learn Web Content**: Para extracción de contenido
-- **Múltiples locales**: Soporte internacional
+This server integrates with:
+- **Microsoft Learn Catalog API**: For search and metadata
+- **Microsoft Learn Web Content**: For content extraction
+- **Multiple locales**: International support
 
-## 🚨 Limitaciones
+## 🚨 Limitations
 
-- Rate limiting de Microsoft Learn puede aplicar
-- Algunos contenidos pueden requerir autenticación
-- El scraping depende de la estructura HTML de Microsoft Learn
+- Microsoft Learn rate limiting may apply
+- Some content may require authentication
+- Scraping depends on Microsoft Learn HTML structure
 
-## 🤝 Contribuciones
+## 🤝 Contributing
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## 📄 Licencia
+## 📄 License
 
-Este proyecto es de uso privado.
+This project is for private use.
 
-## 🔗 Enlaces Útiles
+## 🔗 Useful Links
 
 - [Microsoft Learn](https://learn.microsoft.com)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Certificación AZ-104](https://learn.microsoft.com/en-us/credentials/certifications/azure-administrator/)
+- [AZ-104 Certification](https://learn.microsoft.com/en-us/credentials/certifications/azure-administrator/)
 
-## 📞 Soporte
+## 📞 Support
 
-Para reportar problemas o solicitar características, por favor abre un issue en el repositorio.
+To report issues or request features, please open an issue in the repository.
 
 ---
 
-**¡Hecho con ❤️ para facilitar el aprendizaje de Microsoft Azure!**
+**Made with ❤️ to facilitate Microsoft Azure learning!**
