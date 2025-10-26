@@ -1,0 +1,28 @@
+{
+  "name": "mcp-learn-catalog",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "MCP server for Microsoft Learn Catalog API",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "check": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.1",
+    "cheerio": "^1.1.2",
+    "html-to-text": "^9.0.5",
+    "p-limit": "^7.2.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}
