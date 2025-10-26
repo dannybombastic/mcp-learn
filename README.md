@@ -87,10 +87,15 @@ npm run build
 ```json
 {
   "servers": {
-    "mcp-learn-catalog": {
+    "learn-catalog": {
+      "type": "stdio",
       "command": "node",
-      "args": ["/ruta/absoluta/a/mcp-learn-catalog/dist/server.js"],
-      "env": {}
+      "args": [
+        "/home/dannybombastic/Documents/mcp-learn/dist/server.js"
+      ],
+      "env": {
+        "NODE_NO_WARNINGS": "1"
+      }
     }
   }
 }
@@ -126,7 +131,7 @@ npm start
 1. **Reiniciar VS Code** después de añadir la configuración MCP
 2. **Abrir la paleta de comandos** (`Ctrl+Shift+P`)
 3. **Buscar "MCP"** para ver comandos disponibles
-4. **Verificar conexión** - deberías ver el servidor `mcp-learn-catalog` listado
+4. **Verificar conexión** - deberías ver el servidor `learn-catalog` listado
 
 ### Comandos disponibles en VS Code
 
