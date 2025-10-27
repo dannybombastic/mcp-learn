@@ -154,6 +154,21 @@ scrapeModuleUnits({
   max_chars_excerpt: 25000,
   with_text_excerpt: true
 })
+
+// Alternative: Specify exact units to extract (flexible naming)
+scrapeModuleUnits({
+  module: {
+    firstUnitUrl: "https://learn.microsoft.com/training/modules/configure-storage-accounts/1-introduction/",
+    uid: "learn.wwl.configure-storage-accounts",
+    units: ["introduction", "implement-azure-storage", "explore-azure-storage-services"]
+  },
+  max_chars_excerpt: 4500,
+  with_text_excerpt: true
+})
+
+// Both formats supported for unit names:
+// ✅ Simple: "introduction", "implement-azure-storage" 
+// ✅ Full UID: "learn.wwl.configure-storage-accounts.introduction"
 ```
 
 #### 📋 List modules by type
@@ -329,8 +344,10 @@ The `scrapeModuleUnits` tool automatically extracts:
 ### Smart URL Construction
 The server automatically builds valid URLs for Microsoft Learn units:
 - Detects URL base patterns
-- Numbers units sequentially
+- Numbers units sequentially  
 - Handles different slug formats
+- **Flexible unit naming**: Supports both simple names (`"introduction"`) and full UIDs (`"learn.wwl.module.introduction"`)
+- **Automatic prefix removal**: Intelligently strips `learn.wwl.` prefixes and extracts final unit names
 
 ### Configurable Content Limits
 - Extract up to 25,000 characters per unit

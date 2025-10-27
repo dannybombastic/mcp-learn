@@ -66,8 +66,11 @@ function deriveModuleBase(firstUnitUrl) {
  * Luego normaliza: lowercase, reemplaza no [a-z0-9-] por '-', colapsa guiones y recorta.
  */
 function unitSlugFromUid(uid) {
-    const noPrefix = uid.replace(/^learn\.wwl\./, "");
-    const lastPart = noPrefix.split(".").pop() ?? noPrefix;
+    // Remove any learn.wwl. prefix if present
+    let cleaned = uid.replace(/^learn\.wwl\./, "");
+    // If it contains a dot, take everything after the last dot (final unit name)
+    // Otherwise, use the entire string (already cleaned unit name)
+    const lastPart = cleaned.includes('.') ? cleaned.split(".").pop() ?? cleaned : cleaned;
     return normalizeSlug(lastPart);
 }
 /** Normaliza a patrón web similar al de Microsoft Learn */
