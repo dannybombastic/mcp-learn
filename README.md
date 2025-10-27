@@ -1,4 +1,4 @@
-# MCP Learn Catalog Server 📚
+# MCP Microsoft Learn Catalog Server 📚
 
 An MCP (Model Context Protocol) server for extracting and processing Microsoft Learn content. Provides access to certification catalogs, learning modules, and complete content extraction from study units.
 
