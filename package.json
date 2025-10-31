@@ -8,15 +8,22 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:http": "node dist/http-server.js",
     "dev": "tsx watch src/server.ts",
-    "check": "tsc --noEmit"
+    "dev:http": "tsx watch src/http-server.ts",
+    "check": "tsc --noEmit",
+    "test:mcp": "./test-mcp.sh"
   },
   "engines": {
     "node": ">=18.17"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
     "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "html-to-text": "^9.0.5",
     "p-limit": "^7.2.0",
     "zod": "^3.23.8"
