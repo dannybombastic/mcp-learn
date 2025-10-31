@@ -466,18 +466,11 @@ app.use((req, res, next) => {
 // ---------------------------------------------------------------------------
 app.post('/mcp', async (req: Request, res: Response) => {
   try {
-    // Check required headers
+    // Check required headers - be more flexible for VS Code compatibility
     const protocolVersion = req.headers['mcp-protocol-version'] as string;
-    if (!protocolVersion) {
-      return res.status(400).json({
-        error: {
-          code: -32600,
-          message: "Missing MCP-Protocol-Version header"
-        }
-      });
-    }
-
-    if (protocolVersion !== MCP_PROTOCOL_VERSION) {
+    
+    // Only check protocol version if it's provided (VS Code might not always send it)
+    if (protocolVersion && protocolVersion !== MCP_PROTOCOL_VERSION) {
       return res.status(400).json({
         error: {
           code: -32600,
@@ -486,13 +479,16 @@ app.post('/mcp', async (req: Request, res: Response) => {
       });
     }
 
-    // Validate Accept header for Streamable HTTP
+    // Validate Accept header for Streamable HTTP - be more flexible
     const acceptHeader = req.headers.accept as string;
-    if (!acceptHeader || (!acceptHeader.includes('application/json') && !acceptHeader.includes('text/event-stream'))) {
+    if (acceptHeader && 
+        !acceptHeader.includes('application/json') && 
+        !acceptHeader.includes('text/event-stream') &&
+        !acceptHeader.includes('*/*')) {
       return res.status(400).json({
         error: {
           code: -32600,
-          message: "Accept header must include application/json or text/event-stream"
+          message: "Accept header must include application/json, text/event-stream, or */*"
         }
       });
     }
