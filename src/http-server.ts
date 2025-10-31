@@ -1098,7 +1098,7 @@ async function handleMcpRequest(session: McpSession, request: McpRequest): Promi
             protocolVersion: MCP_PROTOCOL_VERSION,
             serverInfo: {
               name: "mcp-learn-catalog",
-              version: "1.1.0"
+              version: "2.0.0"
             },
             capabilities: {
               tools: {}
@@ -1378,7 +1378,7 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    version: '1.1.0',
+    version: '2.0.0',
     protocol: MCP_PROTOCOL_VERSION
   });
 });
@@ -1387,7 +1387,7 @@ app.get('/', (req: Request, res: Response) => {
   res.json({
     name: "MCP Learn Catalog Server",
     description: "HTTP-based MCP server for Microsoft Learn Catalog API",
-    version: "1.1.0",
+    version: "2.0.0",
     protocol: MCP_PROTOCOL_VERSION,
     endpoints: {
       mcp: "/mcp",
