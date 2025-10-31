@@ -1,2 +1,8 @@
 node_modules/
 dist/
+*.tmp
+*.log
+logs/
+.env.local
+.env.production
+simple-test.sh
