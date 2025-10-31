@@ -58,6 +58,62 @@ interface McpNotification {
 }
 
 // ---------------------------------------------------------------------------
+// Enhanced Type Definitions (v2.0.0)
+// ---------------------------------------------------------------------------
+interface ModuleItem {
+  uid: string;
+  title: string;
+  summary?: string;
+  url?: string;
+  lastModified?: string;
+  popularity?: number;
+  rating?: number;
+  duration?: string;
+  level?: string;
+  roles?: string[];
+  products?: string[];
+  subjects?: string[];
+  firstUnitUrl?: string;
+  units?: string[];
+  number_of_children?: number;
+}
+
+interface LearningPathItem {
+  uid: string;
+  title: string;
+  summary?: string;
+  url?: string;
+  lastModified?: string;
+  popularity?: number;
+  rating?: number;
+  duration?: string;
+  level?: string;
+  roles?: string[];
+  products?: string[];
+  subjects?: string[];
+  modules?: ModuleItem[];
+  prerequisites?: string[];
+  learningPathType?: string;
+}
+
+interface CertificationItem {
+  uid: string;
+  title: string;
+  summary?: string;
+  url?: string;
+  lastModified?: string;
+  popularity?: number;
+  level?: string;
+  roles?: string[];
+  products?: string[];
+  subjects?: string[];
+  prerequisites?: string[];
+  relatedLearningPaths?: string[];
+  examCode?: string;
+  retirementDate?: string;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers comunes (igual que el servidor stdio)
 // ---------------------------------------------------------------------------
 async function fetchCatalog(params: Record<string, string | undefined>) {
@@ -147,6 +203,88 @@ function extractBodyText($: cheerio.CheerioAPI, maxChars = 20000): string {
   return text.length > maxChars ? text.slice(0, maxChars) + "…" : text;
 }
 
+// ---------------------------------------------------------------------------
+// Enhanced Helper Functions (v2.0.0)
+// ---------------------------------------------------------------------------
+
+// Filtering functions
+function filterByProduct(items: any[], products: string[]): any[] {
+  if (!products || products.length === 0) return items;
+  return items.filter(item => {
+    if (!item.products) return false;
+    return products.some(product => 
+      item.products.some((p: string) => 
+        p.toLowerCase().includes(product.toLowerCase()) ||
+        product.toLowerCase().includes(p.toLowerCase())
+      )
+    );
+  });
+}
+
+function filterByRole(items: any[], roles: string[]): any[] {
+  if (!roles || roles.length === 0) return items;
+  return items.filter(item => {
+    if (!item.roles) return false;
+    return roles.some(role => 
+      item.roles.some((r: string) => 
+        r.toLowerCase().includes(role.toLowerCase()) ||
+        role.toLowerCase().includes(r.toLowerCase())
+      )
+    );
+  });
+}
+
+function filterByLevel(items: any[], levels: string[]): any[] {
+  if (!levels || levels.length === 0) return items;
+  const levelMap = new Map([
+    ['beginner', ['beginner', 'basic', 'introduction', 'fundamentals']],
+    ['intermediate', ['intermediate', 'standard', 'regular']],
+    ['advanced', ['advanced', 'expert', 'complex']]
+  ]);
+  
+  return items.filter(item => {
+    if (!item.level) return false;
+    const itemLevel = item.level.toLowerCase();
+    return levels.some(level => {
+      const variants = levelMap.get(level.toLowerCase()) || [level.toLowerCase()];
+      return variants.some(variant => itemLevel.includes(variant));
+    });
+  });
+}
+
+function filterBySubject(items: any[], subjects: string[]): any[] {
+  if (!subjects || subjects.length === 0) return items;
+  return items.filter(item => {
+    if (!item.subjects) return false;
+    return subjects.some(subject => 
+      item.subjects.some((s: string) => 
+        s.toLowerCase().includes(subject.toLowerCase()) ||
+        subject.toLowerCase().includes(s.toLowerCase())
+      )
+    );
+  });
+}
+
+// Sorting functions
+function sortByPopularity(items: any[]): any[] {
+  return [...items].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+}
+
+function sortByRating(items: any[]): any[] {
+  return [...items].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+}
+
+function sortByDuration(items: any[]): any[] {
+  return [...items].sort((a, b) => {
+    const getDurationMinutes = (duration: string): number => {
+      if (!duration) return 0;
+      const match = duration.match(/(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    };
+    return getDurationMinutes(a.duration || '') - getDurationMinutes(b.duration || '');
+  });
+}
+
 const limit = pLimit(4);
 
 // ---------------------------------------------------------------------------
@@ -185,7 +323,7 @@ function getSession(sessionId: string): McpSession | undefined {
 function createMcpServer(): McpServer {
   const server = new McpServer({
     name: "mcp-learn-catalog",
-    version: "1.1.0"
+    version: "2.0.0"
   });
 
   // Tool: listCatalog - adaptado al formato Microsoft
@@ -397,6 +535,336 @@ function createMcpServer(): McpServer {
       return {
         content: [
           { type: "text", text: JSON.stringify(formattedResults, null, 2) }
+        ]
+      };
+    }
+  );
+
+  // ---------------------------------------------------------------------------
+  // Enhanced Tools (v2.0.0)
+  // ---------------------------------------------------------------------------
+
+  // Tool: findByProduct - Search content by Microsoft product
+  server.tool(
+    "findByProduct",
+    "Search content by Microsoft product (Azure, .NET, Microsoft 365, etc.)",
+    {
+      product: z.string().describe("Microsoft product (azure, dotnet, microsoft-365, etc.)"),
+      type: z.string().optional().describe("Content types (modules, learningPaths, certifications)"),
+      level: z.string().optional().describe("Difficulty level (beginner, intermediate, advanced)"),
+      role: z.string().optional().describe("Professional role filter"),
+      max_results: z.number().int().min(1).default(50).describe("Maximum results to return")
+    },
+    async ({ product, type, level, role, max_results }) => {
+      const data = await fetchCatalog({ 
+        product: product,
+        type: type || "modules,learningPaths,certifications",
+        level: level,
+        role: role
+      });
+
+      let results: any[] = [];
+      const types = (type?.split(",") || ["modules", "learningPaths", "certifications"]) as (keyof typeof data)[];
+      
+      for (const t of types) {
+        const arr = Array.isArray(data?.[t]) ? (data[t] as any[]) : [];
+        results = results.concat(arr);
+      }
+
+      // Apply product filter
+      const filtered = filterByProduct(results, [product]);
+      const limited = maybeLimit(filtered, max_results);
+
+      const formattedResults = limited.map((item: any) => ({
+        title: item.title || item.displayName || "Unknown",
+        content: item.summary || item.description || "No description available",
+        contentUrl: item.url || `https://learn.microsoft.com/en-us/training/${item.type || 'modules'}/${item.uid || 'unknown'}`
+      }));
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(formattedResults, null, 2) }
+        ]
+      };
+    }
+  );
+
+  // Tool: findCertificationPath - Find certification paths and prerequisites
+  server.tool(
+    "findCertificationPath",
+    "Find certification paths and prerequisites",
+    {
+      certification_type: z.string().describe("Certification identifier or keyword"),
+      include_prerequisites: z.boolean().default(false).describe("Include prerequisite information"),
+      max_results: z.number().int().min(1).default(20).describe("Maximum results to return")
+    },
+    async ({ certification_type, include_prerequisites, max_results }) => {
+      const data = await fetchCatalog({ 
+        type: "certifications,learningPaths,modules",
+        q: certification_type
+      });
+
+      let results: any[] = [];
+      const types = ["certifications", "learningPaths", "modules"] as (keyof typeof data)[];
+      
+      for (const t of types) {
+        const arr = Array.isArray(data?.[t]) ? (data[t] as any[]) : [];
+        const filtered = arr.filter((item: any) => 
+          contains(item?.title, certification_type) || 
+          contains(item?.summary, certification_type) ||
+          contains(item?.uid, certification_type)
+        );
+        results = results.concat(filtered);
+      }
+
+      const limited = maybeLimit(results, max_results);
+
+      const formattedResults = limited.map((item: any) => ({
+        title: item.title || item.displayName || "Unknown",
+        content: item.summary || item.description || "No description available",
+        contentUrl: item.url || `https://learn.microsoft.com/en-us/training/certifications/${item.uid || 'unknown'}`,
+        prerequisites: include_prerequisites ? (item.prerequisites || []) : undefined
+      }));
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(formattedResults, null, 2) }
+        ]
+      };
+    }
+  );
+
+  // Tool: getLearningPathDetails - Get complete learning path information
+  server.tool(
+    "getLearningPathDetails",
+    "Get complete learning path information with modules",
+    {
+      learning_path_uid: z.string().describe("Learning path unique identifier"),
+      include_modules: z.boolean().default(false).describe("Include module details"),
+      include_prerequisites: z.boolean().default(false).describe("Include prerequisites")
+    },
+    async ({ learning_path_uid, include_modules, include_prerequisites }) => {
+      const data = await fetchCatalog({ uid: learning_path_uid, type: "learningPaths" });
+      
+      const learningPaths = Array.isArray(data?.learningPaths) ? data.learningPaths : [];
+      if (learningPaths.length === 0) {
+        throw new Error(`Learning path not found: ${learning_path_uid}`);
+      }
+
+      const learningPath = learningPaths[0];
+      let modules: any[] = [];
+      
+      if (include_modules && learningPath.modules) {
+        const moduleUids = learningPath.modules.join(",");
+        const moduleData = await fetchCatalog({ uid: moduleUids, type: "modules" });
+        modules = Array.isArray(moduleData?.modules) ? moduleData.modules : [];
+      }
+
+      const result = {
+        uid: learningPath.uid,
+        title: learningPath.title,
+        summary: learningPath.summary,
+        url: learningPath.url,
+        duration: learningPath.duration,
+        level: learningPath.level,
+        roles: learningPath.roles,
+        products: learningPath.products,
+        subjects: learningPath.subjects,
+        modules: include_modules ? modules : undefined,
+        prerequisites: include_prerequisites ? (learningPath.prerequisites || []) : undefined
+      };
+
+      const formattedContent = `# ${result.title}\n\n${result.summary}\n\nURL: ${result.url}\nLevel: ${result.level}\nDuration: ${result.duration}\n\n${include_modules && modules.length > 0 ? `## Modules (${modules.length})\n\n${modules.map((m: any) => `- ${m.title}: ${m.summary}`).join('\n')}` : ''}`;
+
+      return {
+        content: [
+          { type: "text", text: formattedContent }
+        ]
+      };
+    }
+  );
+
+  // Tool: getAdvancedSearch - Multi-criteria search with enhanced filtering
+  server.tool(
+    "getAdvancedSearch",
+    "Multi-criteria search with enhanced filtering capabilities",
+    {
+      query: z.string().optional().describe("Free text search"),
+      products: z.array(z.string()).optional().describe("Array of Microsoft products"),
+      roles: z.array(z.string()).optional().describe("Array of professional roles"),
+      levels: z.array(z.string()).optional().describe("Array of difficulty levels"),
+      subjects: z.array(z.string()).optional().describe("Array of technical subjects"),
+      type: z.string().optional().describe("Content types"),
+      sort_by: z.enum(["popularity", "rating", "duration"]).optional().describe("Sort criteria"),
+      max_results: z.number().int().min(1).default(50).describe("Maximum results")
+    },
+    async ({ query, products, roles, levels, subjects, type, sort_by, max_results }) => {
+      const data = await fetchCatalog({ 
+        type: type || "modules,learningPaths,certifications",
+        q: query,
+        product: products?.join(","),
+        role: roles?.join(","),
+        level: levels?.join(","),
+        subject: subjects?.join(",")
+      });
+
+      let results: any[] = [];
+      const types = (type?.split(",") || ["modules", "learningPaths", "certifications"]) as (keyof typeof data)[];
+      
+      for (const t of types) {
+        const arr = Array.isArray(data?.[t]) ? (data[t] as any[]) : [];
+        results = results.concat(arr);
+      }
+
+      // Apply filters
+      if (products && products.length > 0) {
+        results = filterByProduct(results, products);
+      }
+      if (roles && roles.length > 0) {
+        results = filterByRole(results, roles);
+      }
+      if (levels && levels.length > 0) {
+        results = filterByLevel(results, levels);
+      }
+      if (subjects && subjects.length > 0) {
+        results = filterBySubject(results, subjects);
+      }
+
+      // Apply sorting
+      if (sort_by) {
+        switch (sort_by) {
+          case "popularity":
+            results = sortByPopularity(results);
+            break;
+          case "rating":
+            results = sortByRating(results);
+            break;
+          case "duration":
+            results = sortByDuration(results);
+            break;
+        }
+      }
+
+      const limited = maybeLimit(results, max_results);
+
+      const formattedResults = limited.map((item: any) => ({
+        title: item.title || item.displayName || "Unknown",
+        content: item.summary || item.description || "No description available",
+        contentUrl: item.url || `https://learn.microsoft.com/en-us/training/${item.type || 'modules'}/${item.uid || 'unknown'}`
+      }));
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(formattedResults, null, 2) }
+        ]
+      };
+    }
+  );
+
+  // Tool: scrapeLearningPath - Extract complete learning path content
+  server.tool(
+    "scrapeLearningPath",
+    "Extract complete learning path content recursively",
+    {
+      learning_path_uid: z.string().describe("Learning path unique identifier"),
+      max_modules: z.number().int().optional().describe("Maximum modules to process"),
+      max_units_per_module: z.number().int().optional().describe("Maximum units per module"),
+      with_text_excerpt: z.boolean().default(false).describe("Include text content"),
+      max_chars_excerpt: z.number().int().default(800).describe("Maximum text length")
+    },
+    async ({ learning_path_uid, max_modules, max_units_per_module, with_text_excerpt, max_chars_excerpt }) => {
+      // Get learning path details
+      const pathData = await fetchCatalog({ uid: learning_path_uid, type: "learningPaths" });
+      const learningPaths = Array.isArray(pathData?.learningPaths) ? pathData.learningPaths : [];
+      
+      if (learningPaths.length === 0) {
+        throw new Error(`Learning path not found: ${learning_path_uid}`);
+      }
+
+      const learningPath = learningPaths[0];
+      
+      if (!learningPath.modules || learningPath.modules.length === 0) {
+        return {
+          content: [
+            { type: "text", text: JSON.stringify({ error: "No modules found in learning path" }, null, 2) }
+          ]
+        };
+      }
+
+      // Get module details
+      const moduleUids = learningPath.modules.slice(0, max_modules || learningPath.modules.length).join(",");
+      const moduleData = await fetchCatalog({ uid: moduleUids, type: "modules" });
+      const modules = Array.isArray(moduleData?.modules) ? moduleData.modules : [];
+
+      // Scrape each module
+      const moduleResults = await Promise.all(
+        modules.map(async (module: any) => {
+          try {
+            // Manually call scrapeModuleUnits logic
+            const base = deriveModuleBase(module.firstUnitUrl);
+            const units = module.units || [];
+            
+            const pairs = units.map((unitUid: string, idx: number) => {
+              const slug = unitSlugFromUid(unitUid);
+              const index = idx + 1;
+              const url = `${base}/${index}-${slug}/`;
+              return { index, uid: unitUid, slug, url };
+            });
+
+            const target = max_units_per_module ? pairs.slice(0, max_units_per_module) : pairs;
+
+            const unitResults = await Promise.all(
+              target.map(({ index, uid, slug, url }: { index: number; uid: string; slug: string; url: string }) =>
+                limit(async () => {
+                  const res = await fetch(url, {
+                    headers: { "User-Agent": "mcp-learn-catalog-scraper/2.0" }
+                  });
+                  if (!res.ok) {
+                    return { index, uid, slug, url, ok: false, status: res.status, title: null };
+                  }
+                  const html = await res.text();
+                  const $ = cheerio.load(html);
+                  const title = detectUnitTitle($) ?? slug.replace(/-/g, " ");
+                  const item: any = { index, uid, slug, url, ok: true, title };
+                  if (with_text_excerpt) {
+                    item.text_excerpt = extractBodyText($, max_chars_excerpt);
+                  }
+                  return item;
+                })
+              )
+            );
+            
+            return {
+              module_info: module,
+              scraped_content: {
+                base,
+                count: unitResults.length,
+                units: unitResults
+              }
+            };
+          } catch (error) {
+            return {
+              module_info: module,
+              error: error instanceof Error ? error.message : "Unknown error"
+            };
+          }
+        })
+      );
+
+      const result = {
+        learning_path: {
+          uid: learningPath.uid,
+          title: learningPath.title,
+          summary: learningPath.summary
+        },
+        modules_scraped: moduleResults.length,
+        total_modules: learningPath.modules.length,
+        content: moduleResults
+      };
+
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) }
         ]
       };
     }
