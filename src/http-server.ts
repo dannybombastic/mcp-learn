@@ -540,334 +540,12 @@ function createMcpServer(): McpServer {
     }
   );
 
-  // ---------------------------------------------------------------------------
-  // Enhanced Tools (v2.0.0)
-  // ---------------------------------------------------------------------------
-
-  // Tool: findByProduct - Search content by Microsoft product
+  // SIMPLE TEST TOOL
   server.tool(
-    "findByProduct",
-    "Search content by Microsoft product (Azure, .NET, Microsoft 365, etc.)",
-    {
-      product: z.string().describe("Microsoft product (azure, dotnet, microsoft-365, etc.)"),
-      type: z.string().optional().describe("Content types (modules, learningPaths, certifications)"),
-      level: z.string().optional().describe("Difficulty level (beginner, intermediate, advanced)"),
-      role: z.string().optional().describe("Professional role filter"),
-      max_results: z.number().int().min(1).default(50).describe("Maximum results to return")
-    },
-    async ({ product, type, level, role, max_results }) => {
-      const data = await fetchCatalog({ 
-        product: product,
-        type: type || "modules,learningPaths,certifications",
-        level: level,
-        role: role
-      });
-
-      let results: any[] = [];
-      const types = (type?.split(",") || ["modules", "learningPaths", "certifications"]) as (keyof typeof data)[];
-      
-      for (const t of types) {
-        const arr = Array.isArray(data?.[t]) ? (data[t] as any[]) : [];
-        results = results.concat(arr);
-      }
-
-      // Apply product filter
-      const filtered = filterByProduct(results, [product]);
-      const limited = maybeLimit(filtered, max_results);
-
-      const formattedResults = limited.map((item: any) => ({
-        title: item.title || item.displayName || "Unknown",
-        content: item.summary || item.description || "No description available",
-        contentUrl: item.url || `https://learn.microsoft.com/en-us/training/${item.type || 'modules'}/${item.uid || 'unknown'}`
-      }));
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(formattedResults, null, 2) }
-        ]
-      };
-    }
-  );
-
-  // Tool: findCertificationPath - Find certification paths and prerequisites
-  server.tool(
-    "findCertificationPath",
-    "Find certification paths and prerequisites",
-    {
-      certification_type: z.string().describe("Certification identifier or keyword"),
-      include_prerequisites: z.boolean().default(false).describe("Include prerequisite information"),
-      max_results: z.number().int().min(1).default(20).describe("Maximum results to return")
-    },
-    async ({ certification_type, include_prerequisites, max_results }) => {
-      const data = await fetchCatalog({ 
-        type: "certifications,learningPaths,modules",
-        q: certification_type
-      });
-
-      let results: any[] = [];
-      const types = ["certifications", "learningPaths", "modules"] as (keyof typeof data)[];
-      
-      for (const t of types) {
-        const arr = Array.isArray(data?.[t]) ? (data[t] as any[]) : [];
-        const filtered = arr.filter((item: any) => 
-          contains(item?.title, certification_type) || 
-          contains(item?.summary, certification_type) ||
-          contains(item?.uid, certification_type)
-        );
-        results = results.concat(filtered);
-      }
-
-      const limited = maybeLimit(results, max_results);
-
-      const formattedResults = limited.map((item: any) => ({
-        title: item.title || item.displayName || "Unknown",
-        content: item.summary || item.description || "No description available",
-        contentUrl: item.url || `https://learn.microsoft.com/en-us/training/certifications/${item.uid || 'unknown'}`,
-        prerequisites: include_prerequisites ? (item.prerequisites || []) : undefined
-      }));
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(formattedResults, null, 2) }
-        ]
-      };
-    }
-  );
-
-  // Tool: getLearningPathDetails - Get complete learning path information
-  server.tool(
-    "getLearningPathDetails",
-    "Get complete learning path information with modules",
-    {
-      learning_path_uid: z.string().describe("Learning path unique identifier"),
-      include_modules: z.boolean().default(false).describe("Include module details"),
-      include_prerequisites: z.boolean().default(false).describe("Include prerequisites")
-    },
-    async ({ learning_path_uid, include_modules, include_prerequisites }) => {
-      const data = await fetchCatalog({ uid: learning_path_uid, type: "learningPaths" });
-      
-      const learningPaths = Array.isArray(data?.learningPaths) ? data.learningPaths : [];
-      if (learningPaths.length === 0) {
-        throw new Error(`Learning path not found: ${learning_path_uid}`);
-      }
-
-      const learningPath = learningPaths[0];
-      let modules: any[] = [];
-      
-      if (include_modules && learningPath.modules) {
-        const moduleUids = learningPath.modules.join(",");
-        const moduleData = await fetchCatalog({ uid: moduleUids, type: "modules" });
-        modules = Array.isArray(moduleData?.modules) ? moduleData.modules : [];
-      }
-
-      const result = {
-        uid: learningPath.uid,
-        title: learningPath.title,
-        summary: learningPath.summary,
-        url: learningPath.url,
-        duration: learningPath.duration,
-        level: learningPath.level,
-        roles: learningPath.roles,
-        products: learningPath.products,
-        subjects: learningPath.subjects,
-        modules: include_modules ? modules : undefined,
-        prerequisites: include_prerequisites ? (learningPath.prerequisites || []) : undefined
-      };
-
-      const formattedContent = `# ${result.title}\n\n${result.summary}\n\nURL: ${result.url}\nLevel: ${result.level}\nDuration: ${result.duration}\n\n${include_modules && modules.length > 0 ? `## Modules (${modules.length})\n\n${modules.map((m: any) => `- ${m.title}: ${m.summary}`).join('\n')}` : ''}`;
-
-      return {
-        content: [
-          { type: "text", text: formattedContent }
-        ]
-      };
-    }
-  );
-
-  // Tool: getAdvancedSearch - Multi-criteria search with enhanced filtering
-  server.tool(
-    "getAdvancedSearch",
-    "Multi-criteria search with enhanced filtering capabilities",
-    {
-      query: z.string().optional().describe("Free text search"),
-      products: z.array(z.string()).optional().describe("Array of Microsoft products"),
-      roles: z.array(z.string()).optional().describe("Array of professional roles"),
-      levels: z.array(z.string()).optional().describe("Array of difficulty levels"),
-      subjects: z.array(z.string()).optional().describe("Array of technical subjects"),
-      type: z.string().optional().describe("Content types"),
-      sort_by: z.enum(["popularity", "rating", "duration"]).optional().describe("Sort criteria"),
-      max_results: z.number().int().min(1).default(50).describe("Maximum results")
-    },
-    async ({ query, products, roles, levels, subjects, type, sort_by, max_results }) => {
-      const data = await fetchCatalog({ 
-        type: type || "modules,learningPaths,certifications",
-        q: query,
-        product: products?.join(","),
-        role: roles?.join(","),
-        level: levels?.join(","),
-        subject: subjects?.join(",")
-      });
-
-      let results: any[] = [];
-      const types = (type?.split(",") || ["modules", "learningPaths", "certifications"]) as (keyof typeof data)[];
-      
-      for (const t of types) {
-        const arr = Array.isArray(data?.[t]) ? (data[t] as any[]) : [];
-        results = results.concat(arr);
-      }
-
-      // Apply filters
-      if (products && products.length > 0) {
-        results = filterByProduct(results, products);
-      }
-      if (roles && roles.length > 0) {
-        results = filterByRole(results, roles);
-      }
-      if (levels && levels.length > 0) {
-        results = filterByLevel(results, levels);
-      }
-      if (subjects && subjects.length > 0) {
-        results = filterBySubject(results, subjects);
-      }
-
-      // Apply sorting
-      if (sort_by) {
-        switch (sort_by) {
-          case "popularity":
-            results = sortByPopularity(results);
-            break;
-          case "rating":
-            results = sortByRating(results);
-            break;
-          case "duration":
-            results = sortByDuration(results);
-            break;
-        }
-      }
-
-      const limited = maybeLimit(results, max_results);
-
-      const formattedResults = limited.map((item: any) => ({
-        title: item.title || item.displayName || "Unknown",
-        content: item.summary || item.description || "No description available",
-        contentUrl: item.url || `https://learn.microsoft.com/en-us/training/${item.type || 'modules'}/${item.uid || 'unknown'}`
-      }));
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(formattedResults, null, 2) }
-        ]
-      };
-    }
-  );
-
-  // Tool: scrapeLearningPath - Extract complete learning path content
-  server.tool(
-    "scrapeLearningPath",
-    "Extract complete learning path content recursively",
-    {
-      learning_path_uid: z.string().describe("Learning path unique identifier"),
-      max_modules: z.number().int().optional().describe("Maximum modules to process"),
-      max_units_per_module: z.number().int().optional().describe("Maximum units per module"),
-      with_text_excerpt: z.boolean().default(false).describe("Include text content"),
-      max_chars_excerpt: z.number().int().default(800).describe("Maximum text length")
-    },
-    async ({ learning_path_uid, max_modules, max_units_per_module, with_text_excerpt, max_chars_excerpt }) => {
-      // Get learning path details
-      const pathData = await fetchCatalog({ uid: learning_path_uid, type: "learningPaths" });
-      const learningPaths = Array.isArray(pathData?.learningPaths) ? pathData.learningPaths : [];
-      
-      if (learningPaths.length === 0) {
-        throw new Error(`Learning path not found: ${learning_path_uid}`);
-      }
-
-      const learningPath = learningPaths[0];
-      
-      if (!learningPath.modules || learningPath.modules.length === 0) {
-        return {
-          content: [
-            { type: "text", text: JSON.stringify({ error: "No modules found in learning path" }, null, 2) }
-          ]
-        };
-      }
-
-      // Get module details
-      const moduleUids = learningPath.modules.slice(0, max_modules || learningPath.modules.length).join(",");
-      const moduleData = await fetchCatalog({ uid: moduleUids, type: "modules" });
-      const modules = Array.isArray(moduleData?.modules) ? moduleData.modules : [];
-
-      // Scrape each module
-      const moduleResults = await Promise.all(
-        modules.map(async (module: any) => {
-          try {
-            // Manually call scrapeModuleUnits logic
-            const base = deriveModuleBase(module.firstUnitUrl);
-            const units = module.units || [];
-            
-            const pairs = units.map((unitUid: string, idx: number) => {
-              const slug = unitSlugFromUid(unitUid);
-              const index = idx + 1;
-              const url = `${base}/${index}-${slug}/`;
-              return { index, uid: unitUid, slug, url };
-            });
-
-            const target = max_units_per_module ? pairs.slice(0, max_units_per_module) : pairs;
-
-            const unitResults = await Promise.all(
-              target.map(({ index, uid, slug, url }: { index: number; uid: string; slug: string; url: string }) =>
-                limit(async () => {
-                  const res = await fetch(url, {
-                    headers: { "User-Agent": "mcp-learn-catalog-scraper/2.0" }
-                  });
-                  if (!res.ok) {
-                    return { index, uid, slug, url, ok: false, status: res.status, title: null };
-                  }
-                  const html = await res.text();
-                  const $ = cheerio.load(html);
-                  const title = detectUnitTitle($) ?? slug.replace(/-/g, " ");
-                  const item: any = { index, uid, slug, url, ok: true, title };
-                  if (with_text_excerpt) {
-                    item.text_excerpt = extractBodyText($, max_chars_excerpt);
-                  }
-                  return item;
-                })
-              )
-            );
-            
-            return {
-              module_info: module,
-              scraped_content: {
-                base,
-                count: unitResults.length,
-                units: unitResults
-              }
-            };
-          } catch (error) {
-            return {
-              module_info: module,
-              error: error instanceof Error ? error.message : "Unknown error"
-            };
-          }
-        })
-      );
-
-      const result = {
-        learning_path: {
-          uid: learningPath.uid,
-          title: learningPath.title,
-          summary: learningPath.summary
-        },
-        modules_scraped: moduleResults.length,
-        total_modules: learningPath.modules.length,
-        content: moduleResults
-      };
-
-      return {
-        content: [
-          { type: "text", text: JSON.stringify(result, null, 2) }
-        ]
-      };
-    }
+    "simpleTest",
+    "Simple test",
+    { msg: z.string() },
+    async ({ msg }) => ({ content: [{ type: "text", text: `Echo: ${msg}` }] })
   );
 
   return server;
@@ -1178,6 +856,89 @@ async function handleMcpRequest(session: McpSession, request: McpRequest): Promi
                 max_units: { type: "number" }
               }
             }
+          },
+          {
+            name: "simpleTest",
+            description: "Simple test",
+            inputSchema: {
+              type: "object",
+              properties: {
+                msg: { type: "string" }
+              },
+              required: ["msg"]
+            }
+          },
+          {
+            name: "findByProduct",
+            description: "Find modules and learning paths by product names",
+            inputSchema: {
+              type: "object",
+              properties: {
+                productNames: { type: "string", description: "Comma-separated product names" },
+                locale: { type: "string", default: "en-us" },
+                includeModules: { type: "boolean", default: true },
+                includePaths: { type: "boolean", default: true }
+              },
+              required: ["productNames"]
+            }
+          },
+          {
+            name: "findCertificationPath",
+            description: "Find learning paths for specific certifications",
+            inputSchema: {
+              type: "object",
+              properties: {
+                certificationName: { type: "string", description: "Name of the certification to search for" },
+                locale: { type: "string", default: "en-us" }
+              },
+              required: ["certificationName"]
+            }
+          },
+          {
+            name: "getLearningPathDetails",
+            description: "Get detailed information about a learning path including modules",
+            inputSchema: {
+              type: "object",
+              properties: {
+                pathUid: { type: "string", description: "UID of the learning path" },
+                locale: { type: "string", default: "en-us" },
+                includeModuleDetails: { type: "boolean", default: false }
+              },
+              required: ["pathUid"]
+            }
+          },
+          {
+            name: "getAdvancedSearch",
+            description: "Advanced search with multiple filters and duration",
+            inputSchema: {
+              type: "object",
+              properties: {
+                query: { type: "string", description: "Search query text" },
+                types: { type: "string", default: "modules,learningPaths", description: "Comma-separated types to search" },
+                locale: { type: "string", default: "en-us" },
+                level: { type: "string" },
+                role: { type: "string" },
+                product: { type: "string" },
+                subject: { type: "string" },
+                duration: { type: "string", description: "Duration range like '10-30' minutes" },
+                max_results: { type: "number", default: 20 }
+              },
+              required: ["query"]
+            }
+          },
+          {
+            name: "scrapeLearningPath",
+            description: "Scrape learning path with module content",
+            inputSchema: {
+              type: "object",
+              properties: {
+                pathUid: { type: "string", description: "UID of the learning path" },
+                locale: { type: "string", default: "en-us" },
+                includeText: { type: "boolean", default: false },
+                maxModules: { type: "number", default: 5 }
+              },
+              required: ["pathUid"]
+            }
           }
         ];
         
@@ -1236,6 +997,18 @@ async function executeToolCall(server: McpServer, toolName: string, args: any): 
       return await callGetDetail(args);
     case 'scrapeModuleUnits':
       return await callScrapeModuleUnits(args);
+    case 'simpleTest':
+      return await callSimpleTest(args);
+    case 'findByProduct':
+      return await callFindByProduct(args);
+    case 'findCertificationPath':
+      return await callFindCertificationPath(args);
+    case 'getLearningPathDetails':
+      return await callGetLearningPathDetails(args);
+    case 'getAdvancedSearch':
+      return await callGetAdvancedSearch(args);
+    case 'scrapeLearningPath':
+      return await callScrapeLearningPath(args);
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
@@ -1410,5 +1183,361 @@ app.listen(PORT, () => {
   console.log(`📖 Protocol version: ${MCP_PROTOCOL_VERSION}`);
   console.log(`🔗 Compatible with n8n and Microsoft MCP format`);
 });
+
+// New tool function
+async function callSimpleTest(args: any) {
+  const { msg } = args;
+  return {
+    content: [
+      { type: "text", text: `Echo: ${msg}` }
+    ]
+  };
+}
+
+async function callFindByProduct(args: any) {
+  const { productNames, locale = DEFAULT_LOCALE, includeModules = true, includePaths = true } = args;
+  
+  try {
+    const products = productNames.split(',').map((p: string) => p.trim());
+    const results = [];
+    
+    for (const product of products) {
+      if (includeModules) {
+        const data = await fetchCatalog({ 
+          type: 'modules', 
+          locale, 
+          product, 
+          max_results: '50'
+        });
+        const modules = Array.isArray(data?.modules) ? data.modules : [];
+        if (modules.length > 0) {
+          results.push({
+            product,
+            type: 'modules',
+            count: modules.length,
+            items: modules.slice(0, 10)
+          });
+        }
+      }
+
+      if (includePaths) {
+        const data = await fetchCatalog({ 
+          type: 'learningPaths', 
+          locale, 
+          product, 
+          max_results: '50'
+        });
+        const paths = Array.isArray(data?.learningPaths) ? data.learningPaths : [];
+        if (paths.length > 0) {
+          results.push({
+            product,
+            type: 'learningPaths',
+            count: paths.length,
+            items: paths.slice(0, 10)
+          });
+        }
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(results, null, 2)
+        }
+      ]
+    };
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error searching by product: ${error.message}`
+        }
+      ]
+    };
+  }
+}
+
+async function callFindCertificationPath(args: any) {
+  const { certificationName, locale = DEFAULT_LOCALE } = args;
+  
+  try {
+    const data = await fetchCatalog({
+      type: 'certifications',
+      locale,
+      q: certificationName,
+      max_results: '10'
+    });
+
+    const certifications = Array.isArray(data?.certifications) ? data.certifications : [];
+    const results = [];
+    
+    for (const cert of certifications) {
+      if (cert.products && cert.products.length > 0) {
+        const pathData = await fetchCatalog({
+          type: 'learningPaths',
+          locale,
+          product: cert.products.join(','),
+          max_results: '20'
+        });
+        
+        const paths = Array.isArray(pathData?.learningPaths) ? pathData.learningPaths : [];
+        
+        results.push({
+          certification: {
+            title: cert.title,
+            uid: cert.uid,
+            url: cert.url,
+            products: cert.products
+          },
+          learningPaths: paths
+        });
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(results, null, 2)
+        }
+      ]
+    };
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error finding certification path: ${error.message}`
+        }
+      ]
+    };
+  }
+}
+
+async function callGetLearningPathDetails(args: any) {
+  const { pathUid, locale = DEFAULT_LOCALE, includeModuleDetails = false } = args;
+  
+  try {
+    const data = await fetchCatalog({ uid: pathUid, locale });
+    const pathData = data?.learningPaths?.[0] || data?.modules?.[0];
+    
+    if (!pathData) {
+      throw new Error(`Learning path not found: ${pathUid}`);
+    }
+
+    const result: any = {
+      uid: pathData.uid,
+      title: pathData.title,
+      summary: pathData.summary,
+      description: pathData.description,
+      url: pathData.url,
+      duration: pathData.duration_in_minutes,
+      level: pathData.level,
+      roles: pathData.roles,
+      products: pathData.products,
+      subjects: pathData.subjects,
+      moduleCount: pathData.number_of_children || 0,
+      modules: pathData.children || []
+    };
+
+    if (includeModuleDetails && pathData.children) {
+      const moduleDetails = [];
+      
+      for (let i = 0; i < Math.min(pathData.children.length, 10); i++) {
+        try {
+          const moduleData = await fetchCatalog({ uid: pathData.children[i], locale });
+          const module = moduleData?.modules?.[0];
+          if (module) {
+            moduleDetails.push(module);
+          }
+        } catch (error) {
+          console.error(`Error fetching module ${pathData.children[i]}:`, error);
+        }
+      }
+      
+      result.moduleDetails = moduleDetails;
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2)
+        }
+      ]
+    };
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error getting learning path details: ${error.message}`
+        }
+      ]
+    };
+  }
+}
+
+async function callGetAdvancedSearch(args: any) {
+  const { 
+    query, 
+    types = 'modules,learningPaths', 
+    locale = DEFAULT_LOCALE,
+    level,
+    role,
+    product,
+    subject,
+    duration,
+    max_results = 20
+  } = args;
+  
+  try {
+    const typeArray = types.split(',').map((t: string) => t.trim());
+    const results = [];
+    
+    for (const type of typeArray) {
+      const searchParams: Record<string, string | undefined> = {
+        type,
+        locale,
+        q: query,
+        max_results: Math.floor(max_results / typeArray.length).toString()
+      };
+
+      if (level) searchParams.level = level;
+      if (role) searchParams.role = role;
+      if (product) searchParams.product = product;
+      if (subject) searchParams.subject = subject;
+
+      const data = await fetchCatalog(searchParams);
+      const items = Array.isArray((data as any)?.[type]) ? (data as any)[type] : [];
+      
+      let filteredItems = items;
+      
+      if (duration && type === 'modules') {
+        filteredItems = items.filter((item: any) => {
+          if (!item.duration_in_minutes) return false;
+          const [min, max] = duration.split('-').map((d: string) => parseInt(d.trim()));
+          return item.duration_in_minutes >= min && (!max || item.duration_in_minutes <= max);
+        });
+      }
+
+      if (filteredItems.length > 0) {
+        results.push({
+          type,
+          count: filteredItems.length,
+          items: filteredItems
+        });
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(results, null, 2)
+        }
+      ]
+    };
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error in advanced search: ${error.message}`
+        }
+      ]
+    };
+  }
+}
+
+async function callScrapeLearningPath(args: any) {
+  const { pathUid, locale = DEFAULT_LOCALE, includeText = false, maxModules = 5 } = args;
+  
+  try {
+    const data = await fetchCatalog({ uid: pathUid, locale });
+    const pathData = data?.learningPaths?.[0] || data?.modules?.[0];
+    
+    if (!pathData) {
+      throw new Error(`Learning path not found: ${pathUid}`);
+    }
+
+    const result: any = {
+      uid: pathData.uid,
+      title: pathData.title,
+      summary: pathData.summary,
+      url: pathData.url,
+      modules: []
+    };
+
+    if (pathData.children && pathData.children.length > 0) {
+      const moduleUids = pathData.children.slice(0, maxModules);
+      
+      for (const moduleUid of moduleUids) {
+        try {
+          const moduleData = await fetchCatalog({ uid: moduleUid, locale });
+          const moduleDetail = moduleData?.modules?.[0];
+          
+          if (moduleDetail) {
+            const moduleInfo: any = {
+              uid: moduleDetail.uid,
+              title: moduleDetail.title,
+              summary: moduleDetail.summary,
+              url: moduleDetail.url,
+              duration: moduleDetail.duration_in_minutes,
+              units: moduleDetail.units || []
+            };
+
+            if (includeText && moduleDetail.units && moduleDetail.units.length > 0) {
+              try {
+                // Use the existing scrape function approach
+                const scrapeArgs = {
+                  module: {
+                    uid: moduleDetail.uid,
+                    firstUnitUrl: `https://learn.microsoft.com${moduleDetail.url}/${moduleDetail.units[0]}`,
+                    units: moduleDetail.units,
+                    number_of_children: moduleDetail.units.length
+                  },
+                  with_text_excerpt: true,
+                  max_chars_excerpt: 500,
+                  max_units: 3
+                };
+                
+                const scrapeResult = await callScrapeModuleUnits(scrapeArgs);
+                moduleInfo.unitsContent = scrapeResult;
+              } catch (scrapeError) {
+                console.error(`Error scraping module ${moduleUid}:`, scrapeError);
+                moduleInfo.scrapeError = `Could not scrape content: ${scrapeError}`;
+              }
+            }
+
+            result.modules.push(moduleInfo);
+          }
+        } catch (error) {
+          console.error(`Error processing module ${moduleUid}:`, error);
+        }
+      }
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2)
+        }
+      ]
+    };
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error scraping learning path: ${error.message}`
+        }
+      ]
+    };
+  }
+}
 
 export default app;
