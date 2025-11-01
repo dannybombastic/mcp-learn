@@ -329,14 +329,14 @@ function createMcpServer(): McpServer {
   // Tool: listCatalog - adaptado al formato Microsoft
   server.tool(
     "listCatalog",
-    "List Microsoft Learn objects by type (modules, units, learningPaths, appliedSkills, certifications, mergedCertifications, exams, courses, levels, roles, products, subjects).",
+    "List Microsoft Learn objects by type (modules, units, learningPaths, appliedSkills, cert, mergedCertifications, exams, courses, levels, roles, products, subjects).",
     {
       type: z.enum([
         "modules",
         "units", 
         "learningPaths",
         "appliedSkills",
-        "certifications",
+        "cert",
         "mergedCertifications",
         "exams",
         "courses",
@@ -376,7 +376,7 @@ function createMcpServer(): McpServer {
       type: z
         .string()
         .optional()
-        .describe("Comma-separated: modules,units,learningPaths,appliedSkills,certifications,mergedCertifications,exams,courses"),
+        .describe("Comma-separated: modules,units,learningPaths,appliedSkills,cert,mergedCertifications,exams,courses"),
       locale: z.string().default(DEFAULT_LOCALE),
       level: z.string().optional().describe("Comma-separated levels (e.g., beginner, intermediate, advanced)"),
       role: z.string().optional().describe("Comma-separated roles"),
@@ -394,7 +394,7 @@ function createMcpServer(): McpServer {
         "modules",
         "learningPaths", 
         "appliedSkills",
-        "certifications",
+        "cert",
         "mergedCertifications",
         "exams",
         "courses",
@@ -794,7 +794,7 @@ async function handleMcpRequest(session: McpSession, request: McpRequest): Promi
               properties: {
                 type: {
                   type: "string",
-                  enum: ["modules", "units", "learningPaths", "appliedSkills", "certifications", "mergedCertifications", "exams", "courses", "levels", "roles", "products", "subjects"]
+                  enum: ["modules", "units", "learningPaths", "appliedSkills", "cert", "mergedCertifications", "exams", "courses", "levels", "roles", "products", "subjects"]
                 },
                 locale: { type: "string", default: DEFAULT_LOCALE },
                 max_results: { type: "number", minimum: 1 }
@@ -1038,7 +1038,7 @@ async function callSearchCatalog(args: any) {
   const { q, max_results, ...raw } = args;
   const data = await fetchCatalog(raw as Record<string, string | undefined>);
   const types = (raw.type?.split(",") ?? [
-    "modules", "learningPaths", "appliedSkills", "certifications", 
+    "modules", "learningPaths", "appliedSkills", "cert", 
     "mergedCertifications", "exams", "courses", "units"
   ]) as (keyof typeof data)[];
 
@@ -1264,13 +1264,13 @@ async function callFindCertificationPath(args: any) {
   
   try {
     const data = await fetchCatalog({
-      type: 'certifications',
+      type: 'cert',
       locale,
       q: certificationName,
       max_results: '10'
     });
 
-    const certifications = Array.isArray(data?.certifications) ? data.certifications : [];
+    const certifications = Array.isArray(data?.cert) ? data.cert : [];
     const results = [];
     
     for (const cert of certifications) {
