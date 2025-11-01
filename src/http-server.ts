@@ -336,7 +336,7 @@ function createMcpServer(): McpServer {
         "units", 
         "learningPaths",
         "appliedSkills",
-        "cert",
+        "certifications",
         "mergedCertifications",
         "exams",
         "courses",
@@ -794,7 +794,7 @@ async function handleMcpRequest(session: McpSession, request: McpRequest): Promi
               properties: {
                 type: {
                   type: "string",
-                  enum: ["modules", "units", "learningPaths", "appliedSkills", "cert", "mergedCertifications", "exams", "courses", "levels", "roles", "products", "subjects"]
+                  enum: ["modules", "units", "learningPaths", "appliedSkills", "certifications", "mergedCertifications", "exams", "courses", "levels", "roles", "products", "subjects"]
                 },
                 locale: { type: "string", default: DEFAULT_LOCALE },
                 max_results: { type: "number", minimum: 1 }
@@ -1264,13 +1264,13 @@ async function callFindCertificationPath(args: any) {
   
   try {
     const data = await fetchCatalog({
-      type: 'cert',
+      type: 'certifications',
       locale,
       q: certificationName,
       max_results: '10'
     });
 
-    const certifications = Array.isArray(data?.cert) ? data.cert : [];
+    const certifications = Array.isArray(data?.certifications) ? data.certifications : [];
     const results = [];
     
     for (const cert of certifications) {
