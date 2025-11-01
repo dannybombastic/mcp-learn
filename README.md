@@ -1,310 +1,445 @@
-# MCP Microsoft Learn Catalog Server 📚
+# MCP Learn Catalog Server 📚
 
-An MCP (Model Context Protocol) server for extracting and processing Microsoft Learn content. Provides access to certification catalogs, learning modules, and complete content extraction from study units.
+A dual-transport Model Context Protocol (MCP) server that provides access to Microsoft Learn's catalog API. Available as both **stdio** (for local development) and **HTTP** (for remote deployment and n8n integration) transports.
 
 ## 🚀 Features
 
-- **Catalog Search**: Search modules, certifications, learning paths and more on Microsoft Learn
-- **Content Extraction**: Extract complete module content including tables, diagrams and technical text
-- **Smart Scraping**: Automatically builds URLs and extracts structured content
-- **Certification Support**: Optimized for certifications like AZ-104, AZ-900, etc.
-- **Microsoft Learn API**: Direct integration with official Microsoft Learn API
+- **Dual Transport Support**: stdio (local) and HTTP (remote/web) transports
+- **n8n Compatible**: HTTP server ready for automation workflows
+- **VS Code Integration**: Works seamlessly with VS Code MCP extension
+- **Microsoft Learn API**: Complete access to courses, modules, learning paths
+- **Docker Ready**: Containerized for easy deployment
+- **Search & Filter**: Advanced search with multiple filter options
+- **Content Scraping**: Extract detailed content from learning modules
+- **Session Management**: Secure HTTP session handling
+- **CORS Support**: Configurable cross-origin resource sharing
 
-## 🛠️ Available Tools
+## � Available Tools
 
-### 1. `listCatalog`
-Lists Microsoft Learn objects by type.
+1. **listCatalog** - List Microsoft Learn objects by type
+2. **searchCatalog** - Search the catalog with filters and text queries  
+3. **getDetail** - Get detailed information about specific content
+4. **scrapeModuleUnits** - Extract content from learning module units
 
-**Parameters:**
-- `type`: Content type (modules, certifications, learningPaths, etc.)
-- `locale`: Language (default: en-us)
-- `max_results`: Maximum number of results
+## 🔧 Installation & Setup
 
-### 2. `searchCatalog`
-Search Microsoft Learn catalog with advanced filters.
-
-**Parameters:**
-- `q`: Free text search
-- `type`: Content types separated by commas
-- `level`: Levels (beginner, intermediate, advanced)
-- `product`: Specific products
-- `role`: Specific roles
-
-### 3. `getDetail`
-Get complete object details by UID.
-
-**Parameters:**
-- `uid`: UIDs separated by commas
-- `locale`: Language
-- `type`: Optional type filter
-
-### 4. `scrapeModuleUnits` ⭐
-**Main tool**: Extract complete content from Microsoft Learn modules.
-
-**Parameters:**
-- `module`: Module object with UID, firstUnitUrl and units
-- `firstUnitUrl`: First unit URL (alternative)
-- `units`: Array of unit UIDs (alternative)
-- `max_chars_excerpt`: Maximum characters per unit (default: 20,000)
-- `max_units`: Maximum number of units
-- `with_text_excerpt`: Include complete text excerpt
-
-## 📋 Prerequisites
-
-- Node.js >= 18.17
+### Prerequisites
+- Node.js >= 20.0.0
 - npm or yarn
 
-## 🔧 Installation
+### Local Development (stdio)
 
-### 1. Clone the repository
 ```bash
+# Clone and setup
 git clone <repository-url>
-cd mcp-learn-catalog
-```
-
-### 2. Install dependencies
-```bash
+cd mcp-learn
 npm install
-```
-
-### 3. Build the project
-```bash
 npm run build
-```
 
-### 4. Configure in Visual Studio Code
-
-#### MCP Configuration in VS Code
-
-1. **Install Claude/MCP extension** (if not installed)
-
-2. **Configure MCP server** in VS Code:
-   - Open VS Code
-   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
-   - Search for "MCP: Add Server" or edit MCP configuration
-
-3. **Add configuration in `mcp.json`**:
-```json
-{
-  "servers": {
-    "learn-catalog": {
-      "type": "stdio",
-      "command": "node",
-      "args": [
-        "/home/dannybombastic/Documents/mcp-learn/dist/server.js"
-      ],
-      "env": {
-        "NODE_NO_WARNINGS": "1"
-      }
-    }
-  }
-}
-```
-
-4. **Configuration file location**:
-   - **Windows**: `%APPDATA%\Code\User\mcp.json`
-   - **macOS**: `~/Library/Application Support/Code/User/mcp.json`
-   - **Linux**: `~/.config/Code/User/mcp.json`
-
-#### Alternative configuration (settings.json)
-You can also configure it in VS Code `settings.json`:
-```json
-{
-  "mcp.servers": {
-    "mcp-learn-catalog": {
-      "command": "node",
-      "args": ["/absolute/path/to/mcp-learn-catalog/dist/server.js"]
-    }
-  }
-}
-```
-
-### 5. Run the server (standalone mode)
-```bash
+# Run stdio server
 npm start
 ```
 
-## 🚀 Usage with Visual Studio Code
+### Production Deployment (HTTP)
 
-### Verify the server works
-
-1. **Restart VS Code** after adding MCP configuration
-2. **Open command palette** (`Ctrl+Shift+P`)
-3. **Search "MCP"** to see available commands
-4. **Verify connection** - you should see the `learn-catalog` server listed
-
-### Available commands in VS Code
-
-Once configured, you can use the tools from Claude or any MCP client:
-
-#### 🔍 Search certifications
-```javascript
-// Search for AZ-104 certification
-searchCatalog({
-  q: "AZ-104 Azure Administrator",
-  type: "certifications,learningPaths"
-})
-```
-
-#### 📚 Extract module content
-```javascript
-// Extract complete content from a module
-scrapeModuleUnits({
-  firstUnitUrl: "https://learn.microsoft.com/training/modules/configure-storage-accounts/1-introduction/",
-  max_chars_excerpt: 25000,
-  with_text_excerpt: true
-})
-
-// Alternative: Specify exact units to extract (flexible naming)
-scrapeModuleUnits({
-  module: {
-    firstUnitUrl: "https://learn.microsoft.com/training/modules/configure-storage-accounts/1-introduction/",
-    uid: "learn.wwl.configure-storage-accounts",
-    units: ["introduction", "implement-azure-storage", "explore-azure-storage-services"]
-  },
-  max_chars_excerpt: 4500,
-  with_text_excerpt: true
-})
-
-// Both formats supported for unit names:
-// ✅ Simple: "introduction", "implement-azure-storage" 
-// ✅ Full UID: "learn.wwl.configure-storage-accounts.introduction"
-```
-
-#### 📋 List modules by type
-```javascript
-// List all available modules
-listCatalog({
-  type: "modules",
-  max_results: 50
-})
-```
-
-### Troubleshooting VS Code
-
-#### Issue: Server doesn't appear
-- ✅ Verify the path in `mcp.json` is absolute and correct
-- ✅ Ensure `npm run build` executed successfully
-- ✅ Restart VS Code completely
-- ✅ Check logs in VS Code developer console
-
-#### Issue: Connection errors
-- ✅ Verify Node.js ≥18.17 is installed
-- ✅ Check all dependencies are installed (`npm install`)
-- ✅ Review file permissions on Linux/macOS
-
-#### Issue: Tools not available
-- ✅ Verify MCP extension is enabled
-- ✅ Check server is running without errors
-- ✅ Verify valid JSON configuration in `mcp.json`
-
-## 🚀 Development
-
-### Run in development mode
 ```bash
-npm run dev
+# Build and run with Docker
+docker-compose up -d
+
+# Or run manually
+npm install
+npm run build
+npm run start:http
 ```
 
-### Check TypeScript types
-```bash
-npm run check
-```
+## 🌐 Transport Options
 
-### Project structure
-```
-mcp-learn-catalog/
-├── src/
-│   ├── server.ts          # Main MCP server
-│   └── types/
-│       └── html-to-text.d.ts  # Type definitions
-├── dist/                  # Compiled files
-├── package.json
-├── tsconfig.json
-└── README.md
-```
+### 1. stdio Transport (Local Development)
 
-## 📝 Complete Configuration Example
+Perfect for VS Code MCP extension and local development:
 
-### Complete `mcp.json` file example:
+**VS Code Configuration** (`~/.config/Code/User/mcp.json`):
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp.json",
-  "servers": {
-    "mcp-learn-catalog": {
+  "mcpServers": {
+    "learn-catalog": {
       "command": "node",
-      "args": [
-        "/home/user/Documents/mcp-learn/dist/server.js"
-      ],
-      "env": {},
-      "description": "Microsoft Learn Catalog Server - Extract certification and module content"
+      "args": ["/absolute/path/to/mcp-learn/dist/server.js"],
+      "description": "Microsoft Learn Catalog Server (stdio)"
     }
   }
 }
 ```
 
-### Automatic setup script (Linux/macOS):
-```bash
-#!/bin/bash
-# setup-vscode-mcp.sh
+### 2. HTTP Transport (Remote/Production)
 
-# Get current project path
-PROJECT_PATH=$(pwd)
+For web deployment, n8n integration, and remote access:
 
-# Create configuration directory if it doesn't exist
-mkdir -p ~/.config/Code/User
+- **Live Server**: `https://mcp-learn-catalog.devspn.tech/`
+- **Endpoint**: `POST /mcp`
+- **Protocol**: MCP over HTTP (JSON-RPC 2.0)
+- **Headers**: `Content-Type: application/json`, `Accept: application/json`
+- **Session Management**: Via `Mcp-Session-Id` header
 
-# Create mcp.json file
-cat > ~/.config/Code/User/mcp.json << EOF
+**VS Code Configuration** (HTTP):
+```json
 {
-  "\$schema": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp.json",
-  "servers": {
-    "mcp-learn-catalog": {
-      "command": "node",
-      "args": ["$PROJECT_PATH/dist/server.js"],
-      "env": {},
-      "description": "Microsoft Learn Catalog Server"
+  "mcpServers": {
+    "learn-catalog-http": {
+      "transport": {
+        "type": "http",
+        "uri": "https://mcp-learn-catalog.devspn.tech/mcp"
+      },
+      "description": "Microsoft Learn Catalog Server (HTTP)"
     }
   }
 }
-EOF
-
-echo "✅ MCP configuration created at ~/.config/Code/User/mcp.json"
-echo "🔄 Restart VS Code to apply changes"
 ```
 
-### Windows setup script (PowerShell):
-```powershell
-# setup-vscode-mcp.ps1
+## 🎯 Integration Examples
 
-$projectPath = Get-Location
-$configPath = "$env:APPDATA\Code\User"
+### VS Code MCP Extension
 
-# Create directory if it doesn't exist
-New-Item -ItemType Directory -Force -Path $configPath
+Complete configuration supporting both transports:
 
-# Create JSON content
-$mcpConfig = @{
-    '$schema' = 'https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp.json'
-    servers = @{
-        'mcp-learn-catalog' = @{
-            command = 'node'
-            args = @("$projectPath\dist\server.js")
-            env = @{}
-            description = 'Microsoft Learn Catalog Server'
-        }
+```json
+{
+  "mcpServers": {
+    "learn-catalog": {
+      "command": "node",
+      "args": ["/home/user/Documents/mcp-learn/dist/server.js"],
+      "description": "Microsoft Learn Catalog (Local)"
+    },
+    "learn-catalog-http": {
+      "transport": {
+        "type": "http",
+        "uri": "https://mcp-learn-catalog.devspn.tech/mcp"
+      },
+      "description": "Microsoft Learn Catalog (Remote)"
     }
+  }
 }
+```
 
-# Convert to JSON and save
-$mcpConfig | ConvertTo-Json -Depth 3 | Out-File -FilePath "$configPath\mcp.json" -Encoding UTF8
+### n8n Workflow Integration
 
-Write-Host "✅ MCP configuration created at $configPath\mcp.json"
-Write-Host "🔄 Restart VS Code to apply changes"
+Use the HTTP transport in n8n:
+
+#### 1. Initialize Session
+```javascript
+// HTTP Request Node 1 - Initialize
+POST https://mcp-learn-catalog.devspn.tech/mcp
+Headers: Content-Type: application/json
+
+Body:
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "clientInfo": {"name": "n8n", "version": "1.0.0"},
+    "capabilities": {}
+  }
+}
+```
+
+#### 2. Use Tools
+```javascript
+// HTTP Request Node 2 - Call Tool
+POST https://mcp-learn-catalog.devspn.tech/mcp
+Headers: 
+  Content-Type: application/json
+  Mcp-Session-Id: {{session_id_from_step_1}}
+
+Body:
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "searchCatalog",
+    "arguments": {
+      "q": "Azure Functions",
+      "type": "modules",
+      "max_results": 5
+    }
+  }
+}
+```
+
+### Docker Deployment
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  mcp-learn-catalog:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - ALLOWED_ORIGINS=https://your-n8n-domain.com,http://localhost:3000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+## � API Reference
+
+### listCatalog
+
+List Microsoft Learn content by type.
+
+**Parameters:**
+- `type` (required): Content type (modules, learningPaths, certifications, etc.)
+- `locale` (optional): Language locale (default: en-us)
+- `max_results` (optional): Maximum number of results
+
+**Example:**
+```json
+{
+  "name": "listCatalog",
+  "arguments": {
+    "type": "modules",
+    "max_results": 5
+  }
+}
+```
+
+**Response Format:**
+```json
+[
+  {
+    "title": "Deploy device data protection",
+    "content": "This module describes how you can use Intune...",
+    "contentUrl": "https://learn.microsoft.com/en-us/training/modules/..."
+  }
+]
+```
+
+### searchCatalog
+
+Search through the Microsoft Learn catalog with advanced filters.
+
+**Parameters:**
+- `type` (optional): Comma-separated content types
+- `q` (optional): Free text search query
+- `level` (optional): Difficulty level (beginner, intermediate, advanced)
+- `role` (optional): Target role filter
+- `product` (optional): Microsoft product filter
+- `subject` (optional): Subject area filter
+- `popularity` (optional): Popularity filter (e.g., "gte 0.5")
+- `last_modified` (optional): Date filter (e.g., "gte 2024-01-01")
+- `max_results` (optional): Maximum results to return
+
+**Example:**
+```json
+{
+  "name": "searchCatalog",
+  "arguments": {
+    "q": "Azure Functions",
+    "type": "modules",
+    "level": "intermediate",
+    "max_results": 3
+  }
+}
+```
+
+### getDetail
+
+Get detailed information about specific content by UID.
+
+**Parameters:**
+- `uid` (required): Comma-separated UIDs
+- `locale` (optional): Language locale
+- `type` (optional): Content type filter
+
+**Example:**
+```json
+{
+  "name": "getDetail",
+  "arguments": {
+    "uid": "learn.wwl.develop-azure-functions"
+  }
+}
+```
+
+**Response Format:**
+```markdown
+# Modules
+
+## Develop Azure Functions
+
+Learn how to create and deploy Azure Functions.
+
+URL: https://learn.microsoft.com/en-us/training/modules/develop-azure-functions/
+```
+
+### scrapeModuleUnits
+
+Extract detailed content from learning module units.
+
+**Parameters:**
+- `module` (optional): Module object with uid, firstUnitUrl, units
+- `firstUnitUrl` (optional): Direct URL to first unit
+- `units` (optional): Array of unit UIDs
+- `with_text_excerpt` (optional): Include text content (default: false)
+- `max_chars_excerpt` (optional): Maximum text length (default: 800)
+- `max_units` (optional): Maximum units to process
+
+**Example:**
+```json
+{
+  "name": "scrapeModuleUnits",
+  "arguments": {
+    "firstUnitUrl": "https://learn.microsoft.com/en-us/training/modules/develop-azure-functions/1-introduction/",
+    "units": ["learn.wwl.develop-azure-functions.introduction"],
+    "with_text_excerpt": true,
+    "max_units": 3
+  }
+}
+```
+
+## 🔍 Response Format
+
+All tools return responses in Microsoft-compatible format:
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[JSON array of results or markdown content]"
+    }
+  ]
+}
+```
+
+Response formats match Microsoft MCP tools:
+- **listCatalog/searchCatalog**: Similar to `microsoft_docs_search` (array of objects)
+- **getDetail**: Similar to `microsoft_docs_fetch` (structured markdown)
+- **scrapeModuleUnits**: Similar to `microsoft_code_sample_search` (code snippets format)
+
+## 🛠️ Development
+
+### Available Scripts
+
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Run stdio server (development)
+npm start
+npm run dev
+
+# Run HTTP server (production)
+npm run start:http
+
+# Type checking
+npm run check
+
+# Docker development
+docker-compose up --build
+```
+
+### Project Structure
+
+```
+mcp-learn/
+├── src/
+│   ├── server.ts              # stdio MCP server
+│   ├── http-server.ts         # HTTP MCP server
+│   └── types/
+│       └── html-to-text.d.ts  # Type definitions
+├── dist/                      # Compiled JavaScript
+├── Dockerfile                 # Docker configuration
+├── docker-compose.yml         # Docker Compose setup
+├── package.json              # Dependencies and scripts
+├── tsconfig.json             # TypeScript configuration
+└── README.md                 # This file
+```
+
+## � Security & CORS
+
+The HTTP server includes:
+- **CORS Configuration**: Configurable origins via `ALLOWED_ORIGINS` environment variable
+- **Security Headers**: Content-Type validation, XSS protection, frame options
+- **Session Management**: Secure session handling with automatic cleanup
+- **Input Validation**: Zod schema validation for all parameters
+- **Rate Limiting**: Built-in concurrency control
+
+## 🌍 Environment Variables
+
+```bash
+# Server Configuration
+PORT=3001                     # HTTP server port
+NODE_ENV=production          # Environment mode
+
+# CORS Configuration
+ALLOWED_ORIGINS=http://localhost:3000,https://your-n8n-domain.com
+
+# Session Configuration (optional)
+SESSION_TIMEOUT=3600000      # 1 hour in milliseconds
+```
+
+## 🚀 Deployment Options
+
+### 1. Local Development
+- Use stdio transport with VS Code
+- Direct Node.js execution
+- Full debugging capabilities
+
+### 2. Docker Container
+- Production-ready containerization
+- Multi-stage build optimization
+- Health checks included
+- Automatic session cleanup
+
+### 3. Cloud Deployment
+- Compatible with any Node.js hosting
+- Environment variable configuration
+- Horizontal scaling support
+- SSL/TLS termination ready
+
+### 4. Homelab/Self-hosted
+- Docker Compose setup
+- Reverse proxy compatible (nginx, traefik)
+- Let's Encrypt SSL support
+- Resource monitoring included
+
+## 🧪 Testing the Server
+
+### Health Check (HTTP)
+```bash
+curl https://mcp-learn-catalog.devspn.tech/health
+```
+
+### Basic Tool Test (HTTP)
+```bash
+# Initialize session
+curl -X POST https://mcp-learn-catalog.devspn.tech/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","clientInfo":{"name":"test","version":"1.0.0"},"capabilities":{}}}'
+
+# Call tool (use session ID from above)
+curl -X POST https://mcp-learn-catalog.devspn.tech/mcp \
+  -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: YOUR_SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchCatalog","arguments":{"q":"Azure","max_results":2}}}'
 ```
 
 ## 🎯 Use Cases
 
-### Extract AZ-104 certification content
+### Extract AZ-104 Certification Content
 ```javascript
 // Search for AZ-104 certification
 searchCatalog({
@@ -312,73 +447,78 @@ searchCatalog({
   type: "certifications,learningPaths,modules"
 })
 
-// Extract content from a specific module
+// Extract content from specific modules
 scrapeModuleUnits({
   firstUnitUrl: "https://learn.microsoft.com/en-us/training/modules/configure-storage-accounts/1-introduction/",
-  units: ["learn.wwl.configure-storage-accounts.introduction", "learn.wwl.configure-storage-accounts.implement-azure-storage"],
+  units: ["introduction", "implement-azure-storage"],
   max_chars_excerpt: 25000,
   with_text_excerpt: true
 })
 ```
 
-### Search modules by technology
+### n8n Learning Automation
 ```javascript
-searchCatalog({
-  q: "Azure Storage",
-  type: "modules",
-  level: "intermediate",
-  product: "azure"
-})
+// Create automated learning content workflows
+// 1. Search for latest Azure modules
+// 2. Extract content summaries
+// 3. Generate study guides
+// 4. Send to notification systems
+```
+
+### VS Code Study Assistant
+```javascript
+// Directly within VS Code:
+// 1. Search certification requirements
+// 2. Extract module content
+// 3. Create personalized study notes
+// 4. Track learning progress
 ```
 
 ## 🔍 Advanced Features
 
-### Table Extraction
-The `scrapeModuleUnits` tool automatically extracts:
-- ✅ Comparison tables
-- ✅ Technical specifications
-- ✅ Feature lists
-- ✅ Diagrams and notes
-- ✅ Links and references
+### Intelligent Content Extraction
+- **Table Extraction**: Automatically extracts comparison tables and specifications
+- **Smart URL Construction**: Builds valid URLs for Microsoft Learn units
+- **Flexible Unit Naming**: Supports both simple names and full UIDs
+- **Automatic Prefix Removal**: Strips `learn.wwl.` prefixes intelligently
+- **Configurable Limits**: Extract up to 25,000 characters per unit
 
-### Smart URL Construction
-The server automatically builds valid URLs for Microsoft Learn units:
-- Detects URL base patterns
-- Numbers units sequentially  
-- Handles different slug formats
-- **Flexible unit naming**: Supports both simple names (`"introduction"`) and full UIDs (`"learn.wwl.module.introduction"`)
-- **Automatic prefix removal**: Intelligently strips `learn.wwl.` prefixes and extracts final unit names
+### Session Management (HTTP)
+- **Automatic Session Creation**: On initialize method
+- **Session Cleanup**: Automatic cleanup after 1 hour
+- **Concurrent Session Support**: Multiple clients simultaneously
+- **Session Persistence**: Maintains state across requests
 
-### Configurable Content Limits
-- Extract up to 25,000 characters per unit
-- Process multiple units in parallel
-- Concurrency control to avoid rate limiting
+### CORS & Security
+- **Flexible CORS**: Environment-configurable origins
+- **Security Headers**: XSS protection, content-type validation
+- **Input Validation**: Zod schemas for all parameters
+- **Error Handling**: Comprehensive error responses
 
-## 🛡️ Dependencies
-
-### Production
-- **@modelcontextprotocol/sdk**: MCP framework
-- **cheerio**: HTML parser for scraping
-- **html-to-text**: HTML to text conversion
-- **p-limit**: Concurrency control
-- **zod**: Schema validation
-
-### Development
-- **tsx**: TypeScript runner
-- **typescript**: TypeScript compiler
-
-## 📊 Microsoft Learn API
+## 📊 Microsoft Learn API Integration
 
 This server integrates with:
 - **Microsoft Learn Catalog API**: For search and metadata
 - **Microsoft Learn Web Content**: For content extraction
-- **Multiple locales**: International support
+- **Multiple Locales**: International support (en-us, es-es, etc.)
+- **Real-time Data**: Direct API access for latest content
 
-## 🚨 Limitations
+## 🚨 Limitations & Considerations
 
-- Microsoft Learn rate limiting may apply
-- Some content may require authentication
-- Scraping depends on Microsoft Learn HTML structure
+- **Rate Limiting**: Microsoft Learn may apply rate limits
+- **Content Structure**: Scraping depends on current HTML structure
+- **Session Timeout**: HTTP sessions expire after 1 hour
+- **CORS Restrictions**: Configure allowed origins properly
+- **Memory Usage**: Large content extraction may require adequate RAM
+
+## 📞 Support & Compatibility
+
+- **MCP Protocol**: 2025-06-18
+- **Node.js**: 20+ recommended
+- **Transport**: stdio and HTTP
+- **Clients**: VS Code MCP extension, n8n, any MCP-compatible client
+- **API**: Microsoft Learn Catalog API
+- **Docker**: Multi-stage builds with Node.js 20 Alpine
 
 ## 🤝 Contributing
 
@@ -390,18 +530,15 @@ This server integrates with:
 
 ## 📄 License
 
-This project is for private use.
+MIT License - see LICENSE file for details
 
 ## 🔗 Useful Links
 
 - [Microsoft Learn](https://learn.microsoft.com)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [AZ-104 Certification](https://learn.microsoft.com/en-us/credentials/certifications/azure-administrator/)
-
-## 📞 Support
-
-To report issues or request features, please open an issue in the repository.
+- [Live HTTP Server](https://mcp-learn-catalog.devspn.tech/)
+- [VS Code MCP Extension](https://marketplace.visualstudio.com/items?itemName=ClaudeAI.claude-dev)
 
 ---
 
-**Made with ❤️ to facilitate Microsoft Azure learning!**
+**Made with ❤️ to facilitate Microsoft Azure learning and automation!** 🚀
