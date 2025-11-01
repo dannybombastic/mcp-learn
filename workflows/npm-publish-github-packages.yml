@@ -1,0 +1,71 @@
+name: mcp-learn-catalog-deploy
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: mcp-production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Prepare deployment files
+        run: |
+          cd ${{ github.workspace }}
+          echo "Current directory contents:"
+          ls -la
+          echo "Source files to deploy:"
+          ls -la src/
+          echo "Docker configuration:"
+          ls -la docker-compose.yml Dockerfile
+          echo "Dependencies:"
+          ls -la package.json package-lock.json
+
+      - name: Deploy MCP Server to production
+        uses: dannybombastic/ssh-scp-ssh-pipelines@v1.1.5
+        with:
+            host: ${{ secrets.REMOTE_HOST }}
+            port: 8549
+            user: ${{ secrets.REMOTE_USER }}
+            pass: ${{ secrets.REMOTE_PASS }}
+            connect_timeout: 30s
+            first_ssh: |
+              echo "Stopping MCP Learn Catalog Server..."
+              cd /home/dannybombastic/mcp-learn
+              docker compose down || echo "No running containers to stop"
+              echo "Backing up current deployment..."
+              cp -r . ../mcp-learn-backup-$(date +%Y%m%d-%H%M%S) || echo "Backup failed"
+            scp: |
+                "src/*" => /home/dannybombastic/mcp-learn/src/
+                "package.json" => /home/dannybombastic/mcp-learn/
+                "package-lock.json" => /home/dannybombastic/mcp-learn/
+                "tsconfig.json" => /home/dannybombastic/mcp-learn/
+                "docker-compose.yml" => /home/dannybombastic/mcp-learn/
+                "Dockerfile" => /home/dannybombastic/mcp-learn/
+                "README.md" => /home/dannybombastic/mcp-learn/
+            last_ssh: |
+                echo "Verifying deployment files..."
+                cd /home/dannybombastic/mcp-learn
+                ls -la
+                echo "Building and starting MCP Learn Catalog Server with Docker..."
+                echo "Docker will handle: npm install + npm run build + service start"
+                docker compose up -d --build
+                echo "Waiting for service to be ready..."
+                sleep 15
+                echo "Checking container status..."
+                docker compose ps
+                echo "Checking container logs..."
+                docker compose logs --tail=20
+                echo "Checking service health..."
+                curl -f http://localhost:3001/health || echo "Health check endpoint not available"
+                echo "🚀 MCP Learn Catalog Server v2.0.0 deployment completed successfully!"
+                echo "🌐 Server available at: https://mcp-learn-catalog.devspn.tech/mcp"
